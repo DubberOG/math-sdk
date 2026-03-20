@@ -29,10 +29,10 @@ class GameExecutables(GameCalculations):
 
         for b_reel, b_row, b_name in blocker_positions:
             blocker_cfg = self.config.blocker_config[b_name]
-            # Each TNT on the same reel or adjacent reel can attempt to destroy
+            # TNT must be directly adjacent (same/neighboring reel AND row)
             num_tnt_nearby = sum(
                 1 for w_reel, w_row in wild_positions
-                if abs(w_reel - b_reel) <= 1
+                if abs(w_reel - b_reel) <= 1 and abs(w_row - b_row) <= 1
             )
             if num_tnt_nearby > 0:
                 # Each TNT gets independent chance

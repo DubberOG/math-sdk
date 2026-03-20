@@ -33,23 +33,23 @@ class GameConfig(Config):
         # Basic symbols (L1-L5): pay from 3+ on reels 1-3
         self.paytable = {
             # H1 - Miner-man
-            (6, "H1"): 25, (5, "H1"): 10, (4, "H1"): 5, (3, "H1"): 2, (2, "H1"): 0.5,
+            (6, "H1"): 9, (5, "H1"): 3.5, (4, "H1"): 1.7, (3, "H1"): 0.7, (2, "H1"): 0.2,
             # H2 - Miner-girl
-            (6, "H2"): 20, (5, "H2"): 8, (4, "H2"): 4, (3, "H2"): 1.5, (2, "H2"): 0.4,
+            (6, "H2"): 7, (5, "H2"): 2.8, (4, "H2"): 1.4, (3, "H2"): 0.6, (2, "H2"): 0.1,
             # H3 - Wolf
-            (6, "H3"): 15, (5, "H3"): 6, (4, "H3"): 3, (3, "H3"): 1, (2, "H3"): 0.3,
+            (6, "H3"): 5.5, (5, "H3"): 2.2, (4, "H3"): 1.1, (3, "H3"): 0.4, (2, "H3"): 0.1,
             # H4 - Sheep
-            (6, "H4"): 10, (5, "H4"): 4, (4, "H4"): 2, (3, "H4"): 0.8, (2, "H4"): 0.2,
+            (6, "H4"): 3.5, (5, "H4"): 1.4, (4, "H4"): 0.7, (3, "H4"): 0.3, (2, "H4"): 0.1,
             # L1 - A
-            (6, "L1"): 5, (5, "L1"): 2, (4, "L1"): 1, (3, "L1"): 0.4,
+            (6, "L1"): 1.7, (5, "L1"): 0.7, (4, "L1"): 0.3, (3, "L1"): 0.1,
             # L2 - K
-            (6, "L2"): 4, (5, "L2"): 1.5, (4, "L2"): 0.8, (3, "L2"): 0.3,
+            (6, "L2"): 1.4, (5, "L2"): 0.6, (4, "L2"): 0.3, (3, "L2"): 0.1,
             # L3 - Q
-            (6, "L3"): 3, (5, "L3"): 1.2, (4, "L3"): 0.6, (3, "L3"): 0.2,
+            (6, "L3"): 1.1, (5, "L3"): 0.5, (4, "L3"): 0.2, (3, "L3"): 0.1,
             # L4 - J
-            (6, "L4"): 2.5, (5, "L4"): 1, (4, "L4"): 0.5, (3, "L4"): 0.2,
+            (6, "L4"): 0.9, (5, "L4"): 0.4, (4, "L4"): 0.2, (3, "L4"): 0.1,
             # L5 - 10
-            (6, "L5"): 2, (5, "L5"): 0.8, (4, "L5"): 0.4, (3, "L5"): 0.1,
+            (6, "L5"): 0.7, (5, "L5"): 0.3, (4, "L5"): 0.1, (3, "L5"): 0.1,
         }
 
         self.include_padding = True
@@ -60,11 +60,11 @@ class GameConfig(Config):
             "blocker": ["B1", "B2", "B3"],  # Bronze, Silver, Diamond
         }
 
-        # Blocker properties
+        # Blocker properties - multipliers are per-bet, applied as instant win
         self.blocker_config = {
             "B1": {"destroy_chance": 1.0, "min_mult": 0.5, "max_mult": 2},      # Bronze
-            "B2": {"destroy_chance": 0.75, "min_mult": 5, "max_mult": 20},      # Silver
-            "B3": {"destroy_chance": 0.10, "min_mult": 25, "max_mult": 5000},   # Diamond
+            "B2": {"destroy_chance": 0.75, "min_mult": 2, "max_mult": 10},      # Silver
+            "B3": {"destroy_chance": 0.10, "min_mult": 10, "max_mult": 100},    # Diamond
         }
 
         # Pickaxe config for bonus game
@@ -75,18 +75,28 @@ class GameConfig(Config):
             "diamond": {"min_hits": 5, "max_hits": 15},
         }
 
-        # Bonus config
+        # Bonus tiers based on scatter count:
+        # 3 scatters = Bonus: enhanced base game, 3 lives, all blockers
+        # 4 scatters = Super Bonus: pickaxe collection mode, 3 lives, all blockers
+        # 5 scatters = Super Bonus+: pickaxe collection mode, 5 lives, no bronze/silver blockers
+        # 3 scatters: 10 free spins, enhanced base game
+        # 4 scatters: pickaxe collection (3 lives) THEN 10 free spins
+        # 5 scatters: enhanced pickaxe collection (3 lives, no bronze/silver) THEN 10 free spins
+        self.bonus_tiers = {
+            3: {"name": "bonus", "lives": 0, "pickaxe_mode": False, "removed_blockers": [], "reel": "BN0", "free_spins": 10},
+            4: {"name": "super_bonus", "lives": 3, "pickaxe_mode": True, "removed_blockers": [], "reel": "BN0", "free_spins": 10},
+            5: {"name": "super_bonus_plus", "lives": 3, "pickaxe_mode": True, "removed_blockers": ["B1", "B2"], "reel": "BN0", "free_spins": 10},
+        }
         self.bonus_lives = 3
 
-        # Freespin/bonus triggers: 3 scatters to trigger
         self.freespin_triggers = {
-            self.basegame_type: {3: 1, 4: 1, 5: 1, 6: 1},
-            self.freegame_type: {2: 1, 3: 1, 4: 1, 5: 1, 6: 1},
+            self.basegame_type: {i: 10 for i in range(3, 25)},
+            self.freegame_type: {i: 5 for i in range(2, 25)},
         }
         self.anticipation_triggers = {self.basegame_type: 2, self.freegame_type: 1}
 
-        # Reels
-        reels = {"BR0": "BR0.csv", "FR0": "FR0.csv"}
+        # Reels: BR0 = base, BN0 = bonus (more TNT), FR0 = super bonus (pickaxe mode)
+        reels = {"BR0": "BR0.csv", "BN0": "BN0.csv", "FR0": "FR0.csv"}
         self.reels = {}
         for r, f in reels.items():
             self.reels[r] = self.read_reels_csv(os.path.join(self.reels_path, f))
@@ -104,33 +114,13 @@ class GameConfig(Config):
                 is_buybonus=False,
                 distributions=[
                     Distribution(
-                        criteria="freegame",
-                        quota=0.1,
+                        criteria="basegame",
+                        quota=1.0,
                         conditions={
                             "reel_weights": {
                                 self.basegame_type: {"BR0": 1},
-                                self.freegame_type: {"FR0": 1},
+                                self.freegame_type: {"BN0": 1},
                             },
-                            "force_wincap": False,
-                            "force_freegame": True,
-                            "scatter_triggers": {3: 100, 4: 20, 5: 5, 6: 1},
-                        },
-                    ),
-                    Distribution(
-                        criteria="0",
-                        quota=0.4,
-                        win_criteria=0.0,
-                        conditions={
-                            "reel_weights": {self.basegame_type: {"BR0": 1}},
-                            "force_wincap": False,
-                            "force_freegame": False,
-                        },
-                    ),
-                    Distribution(
-                        criteria="basegame",
-                        quota=0.5,
-                        conditions={
-                            "reel_weights": {self.basegame_type: {"BR0": 1}},
                             "force_wincap": False,
                             "force_freegame": False,
                         },
@@ -151,8 +141,8 @@ class GameConfig(Config):
                         quota=1,
                         conditions={
                             "reel_weights": {
-                                self.basegame_type: {"BR0": 1},
-                                self.freegame_type: {"FR0": 1},
+                                self.basegame_type: {"BN0": 1},
+                                self.freegame_type: {"BN0": 1},
                             },
                             "force_wincap": False,
                             "force_freegame": True,
