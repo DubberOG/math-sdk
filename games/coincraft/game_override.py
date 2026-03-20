@@ -12,7 +12,7 @@ class GameStateOverride(GameExecutables):
         # Coincraft-specific state
         self.blocker_wins = 0
         self.bonus_phase = None
-        self.bonus_lives = self.config.bonus_lives
+        self.bonus_lives = 3
         self.pickaxes = []
 
     def assign_special_sym_function(self):

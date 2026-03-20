@@ -14,8 +14,13 @@ class GameExecutables(GameCalculations):
             self.win_manager.update_spinwin(self.win_data["totalWin"])
         Ways.emit_wayswin_events(self)
 
-    def evaluate_blockers(self):
+    def evaluate_blockers(self, use_bonus_config=False):
         """Check if any TNT wilds are adjacent to blockers and resolve them."""
+        blocker_cfg_map = (
+            self.config.blocker_config_bonus if use_bonus_config and hasattr(self.config, 'blocker_config_bonus')
+            else self.config.blocker_config
+        )
+
         blocker_wins = 0
         wild_positions = []
         blocker_positions = []
@@ -28,7 +33,7 @@ class GameExecutables(GameCalculations):
                     blocker_positions.append((reel_idx, row_idx, symbol.name))
 
         for b_reel, b_row, b_name in blocker_positions:
-            blocker_cfg = self.config.blocker_config[b_name]
+            blocker_cfg = blocker_cfg_map.get(b_name, self.config.blocker_config[b_name])
             # TNT must be directly adjacent (same/neighboring reel AND row)
             num_tnt_nearby = sum(
                 1 for w_reel, w_row in wild_positions
@@ -43,7 +48,6 @@ class GameExecutables(GameCalculations):
                         break
 
                 if destroyed:
-                    # Use discrete steps of 0.1 to ensure payout increments of 10
                     min_steps = int(blocker_cfg["min_mult"] * 10)
                     max_steps = int(blocker_cfg["max_mult"] * 10)
                     mult = random.randint(min_steps, max_steps) / 10.0
