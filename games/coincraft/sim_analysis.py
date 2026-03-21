@@ -11,40 +11,43 @@ import time
 from collections import defaultdict
 
 # Game config inline for fast standalone execution
-NUM_REELS = 6
+NUM_REELS = 5
 NUM_ROWS = 4
 
 PAYTABLE = {
-    (6, "H1"): 8, (5, "H1"): 3, (4, "H1"): 1.5, (3, "H1"): 0.6,
-    (6, "H2"): 6, (5, "H2"): 2.5, (4, "H2"): 1.2, (3, "H2"): 0.5,
-    (6, "H3"): 5, (5, "H3"): 2, (4, "H3"): 1, (3, "H3"): 0.3,
-    (6, "H4"): 3, (5, "H4"): 1.2, (4, "H4"): 0.6, (3, "H4"): 0.2,
-    (6, "L1"): 1.5, (5, "L1"): 0.6, (4, "L1"): 0.3, (3, "L1"): 0.1,
-    (6, "L2"): 1.2, (5, "L2"): 0.5, (4, "L2"): 0.2, (3, "L2"): 0.1,
-    (6, "L3"): 1, (5, "L3"): 0.4, (4, "L3"): 0.2, (3, "L3"): 0.1,
-    (6, "L4"): 0.8, (5, "L4"): 0.3, (4, "L4"): 0.2, (3, "L4"): 0.1,
-    (6, "L5"): 0.6, (5, "L5"): 0.2, (4, "L5"): 0.1, (3, "L5"): 0.1,
+    (5, "H1"): 15, (4, "H1"): 6, (3, "H1"): 2, (2, "H1"): 0.5,
+    (5, "H2"): 12, (4, "H2"): 5, (3, "H2"): 1.5, (2, "H2"): 0.4,
+    (5, "H3"): 10, (4, "H3"): 4, (3, "H3"): 1, (2, "H3"): 0.3,
+    (5, "H4"): 6, (4, "H4"): 2.5, (3, "H4"): 0.8, (2, "H4"): 0.2,
+    (5, "L1"): 3, (4, "L1"): 1.2, (3, "L1"): 0.4,
+    (5, "L2"): 2.5, (4, "L2"): 1, (3, "L2"): 0.3,
+    (5, "L3"): 2, (4, "L3"): 0.8, (3, "L3"): 0.2,
+    (5, "L4"): 1.5, (4, "L4"): 0.6, (3, "L4"): 0.15,
+    (5, "L5"): 1, (4, "L5"): 0.4, (3, "L5"): 0.1,
 }
 
 WILDS = {"W"}
 PAY_SYMBOLS = ["H1", "H2", "H3", "H4", "L1", "L2", "L3", "L4", "L5"]
 
 BLOCKER_CONFIG = {
-    "B1": {"destroy_chance": 1.0, "min_mult": 0.5, "max_mult": 2},
-    "B2": {"destroy_chance": 0.75, "min_mult": 2, "max_mult": 10},
-    "B3": {"destroy_chance": 0.10, "min_mult": 10, "max_mult": 100},
+    "B1": {"destroy_chance": 0.60, "min_mult": 0.5, "max_mult": 2},
+    "B2": {"destroy_chance": 0.30, "min_mult": 5, "max_mult": 20},
+    "B3": {"destroy_chance": 0.10, "min_mult": 25, "max_mult": 200},
+    "B4": {"destroy_chance": 0.01, "min_mult": 250, "max_mult": 5000},
 }
 
 BLOCKER_CONFIG_BONUS = {
-    "B1": {"destroy_chance": 1.0, "min_mult": 0.5, "max_mult": 3},
-    "B2": {"destroy_chance": 0.50, "min_mult": 3, "max_mult": 20},
-    "B3": {"destroy_chance": 0.005, "min_mult": 25, "max_mult": 5000},
+    "B1": {"destroy_chance": 0.70, "min_mult": 0.5, "max_mult": 3},
+    "B2": {"destroy_chance": 0.40, "min_mult": 5, "max_mult": 20},
+    "B3": {"destroy_chance": 0.15, "min_mult": 25, "max_mult": 100},
+    "B4": {"destroy_chance": 0.02, "min_mult": 250, "max_mult": 2000},
 }
 
 BONUS_TIERS = {
     3: {"name": "bonus", "pickaxe_mode": False, "removed_blockers": [], "free_spins": 10},
     4: {"name": "super_bonus", "pickaxe_mode": True, "lives": 3, "removed_blockers": [], "free_spins": 10},
     5: {"name": "super_bonus_plus", "pickaxe_mode": True, "lives": 3, "removed_blockers": ["B1", "B2"], "free_spins": 10},
+    6: {"name": "super_bonus_plus", "pickaxe_mode": True, "lives": 3, "removed_blockers": ["B1", "B2"], "free_spins": 10},
 }
 
 PICKAXE_CONFIG = {
@@ -125,7 +128,7 @@ def eval_blockers(board, config=BLOCKER_CONFIG):
 
 
 def count_scatters(board):
-    return sum(1 for r in range(NUM_REELS) for row in range(NUM_ROWS) if board[r][row] == "S")
+    return min(sum(1 for r in range(NUM_REELS) for row in range(NUM_ROWS) if board[r][row] == "S"), 5)
 
 
 def pick_pickaxe_type():
@@ -237,7 +240,7 @@ def run_session(num_spins, br0, fg1):
 
 def main():
     BATCH_SIZE = 500
-    NUM_BATCHES = 20000  # 20000 x 500 = 10M total spins
+    NUM_BATCHES = 40000  # 40000 x 500 = 20M total spins
     TOTAL_SIMS = BATCH_SIZE * NUM_BATCHES
 
     br0 = read_reels("BR0.csv")
