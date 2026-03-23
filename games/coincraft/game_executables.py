@@ -25,9 +25,18 @@ class GameExecutables(GameCalculations):
         wild_positions = []
         blocker_positions = []
 
+        # Only TNTs that are part of a winning way can trigger explosions
+        winning_wild_positions = set()
+        if hasattr(self, 'win_data') and self.win_data:
+            for win in self.win_data.get("wins", []):
+                for pos in win.get("positions", []):
+                    r, row = pos["reel"], pos["row"]
+                    if self.board[r][row].name == "W":
+                        winning_wild_positions.add((r, row))
+
         for reel_idx, reel in enumerate(self.board):
             for row_idx, symbol in enumerate(reel):
-                if symbol.name == "W":
+                if symbol.name == "W" and (reel_idx, row_idx) in winning_wild_positions:
                     wild_positions.append((reel_idx, row_idx))
                 elif symbol.name in self.config.blocker_config:
                     blocker_positions.append((reel_idx, row_idx, symbol.name))

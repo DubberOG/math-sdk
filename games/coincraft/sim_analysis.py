@@ -109,16 +109,36 @@ def eval_ways(board):
     return total
 
 
+def get_winning_wild_positions(board):
+    """Find TNT positions that are part of a winning way."""
+    winning = set()
+    for sym in PAY_SYMBOLS:
+        ways, consec = 1, 0
+        positions = []
+        for r in range(NUM_REELS):
+            matches = [(r, row) for row in range(NUM_ROWS) if board[r][row] == sym or board[r][row] in WILDS]
+            if matches:
+                ways *= len(matches)
+                consec += 1
+                positions.extend(matches)
+            else:
+                break
+        if (consec, sym) in PAYTABLE:
+            for r, row in positions:
+                if board[r][row] in WILDS:
+                    winning.add((r, row))
+    return winning
+
+
 def eval_blockers(board, config=BLOCKER_CONFIG):
-    """Evaluate TNT+blocker interactions. Returns total blocker win."""
-    wild_pos = []
+    """Evaluate TNT+blocker interactions. Only TNTs in winning ways trigger."""
+    winning_wilds = get_winning_wild_positions(board)
+    wild_pos = list(winning_wilds)
     blocker_pos = []
     for r in range(NUM_REELS):
         for row in range(NUM_ROWS):
             s = board[r][row]
-            if s == "W":
-                wild_pos.append((r, row))
-            elif s in config:
+            if s in config:
                 blocker_pos.append((r, row, s))
 
     total = 0
