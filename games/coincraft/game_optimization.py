@@ -71,42 +71,64 @@ class OptimizationSetup:
                     bias_weights=[0.4],
                 ).return_dict(),
             },
-            "bonus": {
+            "bonus_boost": {
+                "conditions": {
+                    "freegame": ConstructConditions(
+                        rtp=0.50, hr="x", search_conditions={"symbol": "scatter"}
+                    ).return_dict(),
+                    "basegame": ConstructConditions(hr=2.0, rtp=0.46).return_dict(),
+                },
+                "scaling": ConstructScaling([
+                    {"criteria": "freegame", "scale_factor": 0.9, "win_range": (20, 50), "probability": 1.0},
+                    {"criteria": "freegame", "scale_factor": 1.2, "win_range": (1000, 5000), "probability": 1.0},
+                ]).return_dict(),
+                "parameters": ConstructParameters(
+                    num_show=5000, num_per_fence=10000, min_m2m=4, max_m2m=8,
+                    pmb_rtp=1.0, sim_trials=5000, test_spins=[10, 20, 50],
+                    test_weights=[0.4, 0.3, 0.3], score_type="rtp",
+                ).return_dict(),
+            },
+            "free_spins": {
                 "conditions": {
                     "freegame": ConstructConditions(rtp=0.96, hr="x").return_dict(),
                 },
-                "scaling": ConstructScaling(
-                    [
-                        {
-                            "criteria": "freegame",
-                            "scale_factor": 0.9,
-                            "win_range": (20, 50),
-                            "probability": 1.0,
-                        },
-                        {
-                            "criteria": "freegame",
-                            "scale_factor": 0.8,
-                            "win_range": (1000, 2000),
-                            "probability": 1.0,
-                        },
-                        {
-                            "criteria": "freegame",
-                            "scale_factor": 1.2,
-                            "win_range": (5000, 8000),
-                            "probability": 1.0,
-                        },
-                    ]
-                ).return_dict(),
+                "scaling": ConstructScaling([
+                    {"criteria": "freegame", "scale_factor": 0.9, "win_range": (20, 50), "probability": 1.0},
+                    {"criteria": "freegame", "scale_factor": 0.8, "win_range": (1000, 2000), "probability": 1.0},
+                    {"criteria": "freegame", "scale_factor": 1.2, "win_range": (5000, 8000), "probability": 1.0},
+                ]).return_dict(),
                 "parameters": ConstructParameters(
-                    num_show=5000,
-                    num_per_fence=10000,
-                    min_m2m=4,
-                    max_m2m=8,
-                    pmb_rtp=1.0,
-                    sim_trials=5000,
-                    test_spins=[10, 20, 50],
-                    test_weights=[0.6, 0.2, 0.2],
-                    score_type="rtp",
+                    num_show=5000, num_per_fence=10000, min_m2m=4, max_m2m=8,
+                    pmb_rtp=1.0, sim_trials=5000, test_spins=[10, 20, 50],
+                    test_weights=[0.6, 0.2, 0.2], score_type="rtp",
+                ).return_dict(),
+            },
+            "crazy_mining": {
+                "conditions": {
+                    "freegame": ConstructConditions(rtp=0.96, hr="x").return_dict(),
+                },
+                "scaling": ConstructScaling([
+                    {"criteria": "freegame", "scale_factor": 0.9, "win_range": (50, 200), "probability": 1.0},
+                    {"criteria": "freegame", "scale_factor": 1.2, "win_range": (2000, 8000), "probability": 1.0},
+                ]).return_dict(),
+                "parameters": ConstructParameters(
+                    num_show=5000, num_per_fence=10000, min_m2m=4, max_m2m=8,
+                    pmb_rtp=1.0, sim_trials=5000, test_spins=[10, 20, 50],
+                    test_weights=[0.6, 0.2, 0.2], score_type="rtp",
+                ).return_dict(),
+            },
+            "ultimate_mining": {
+                "conditions": {
+                    "freegame": ConstructConditions(rtp=0.96, hr="x").return_dict(),
+                },
+                "scaling": ConstructScaling([
+                    {"criteria": "freegame", "scale_factor": 0.9, "win_range": (100, 500), "probability": 1.0},
+                    {"criteria": "freegame", "scale_factor": 1.2, "win_range": (5000, 15000), "probability": 1.0},
+                ]).return_dict(),
+                "parameters": ConstructParameters(
+                    num_show=5000, num_per_fence=10000, min_m2m=4, max_m2m=8,
+                    pmb_rtp=1.0, sim_trials=5000, test_spins=[10, 20, 50],
+                    test_weights=[0.6, 0.2, 0.2], score_type="rtp",
                 ).return_dict(),
             },
         }

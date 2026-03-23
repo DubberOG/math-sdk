@@ -120,9 +120,16 @@ class GameConfig(Config):
         for r, f in reels.items():
             self.reels[r] = self.read_reels_csv(os.path.join(self.reels_path, f))
 
-        mode_maxwins = {"base": 25000, "bonus": 25000}
+        mode_maxwins = {
+            "base": 25000,
+            "bonus_boost": 25000,
+            "free_spins": 25000,
+            "crazy_mining": 25000,
+            "ultimate_mining": 25000,
+        }
 
         self.bet_modes = [
+            # Base game - normal play
             BetMode(
                 name="base",
                 cost=1.0,
@@ -172,11 +179,49 @@ class GameConfig(Config):
                     ),
                 ],
             ),
+            # Bonus Hunt - increased chance to trigger bonus (cost 10x)
             BetMode(
-                name="bonus",
+                name="bonus_boost",
+                cost=2.0,
+                rtp=self.rtp,
+                max_win=mode_maxwins["bonus_boost"],
+                auto_close_disabled=False,
+                is_feature=False,
+                is_buybonus=True,
+                distributions=[
+                    Distribution(
+                        criteria="freegame",
+                        quota=0.5,
+                        conditions={
+                            "reel_weights": {
+                                self.basegame_type: {"BN0": 1},
+                                self.freegame_type: {"FG0": 1},
+                            },
+                            "force_wincap": False,
+                            "force_freegame": True,
+                            "scatter_triggers": {3: 100, 4: 20, 5: 5},
+                        },
+                    ),
+                    Distribution(
+                        criteria="basegame",
+                        quota=0.5,
+                        conditions={
+                            "reel_weights": {
+                                self.basegame_type: {"BN0": 1},
+                                self.freegame_type: {"FG0": 1},
+                            },
+                            "force_wincap": False,
+                            "force_freegame": False,
+                        },
+                    ),
+                ],
+            ),
+            # Free Spins - guaranteed 3 scatters (cost 100x)
+            BetMode(
+                name="free_spins",
                 cost=100.0,
                 rtp=self.rtp,
-                max_win=mode_maxwins["bonus"],
+                max_win=mode_maxwins["free_spins"],
                 auto_close_disabled=False,
                 is_feature=False,
                 is_buybonus=True,
@@ -191,7 +236,57 @@ class GameConfig(Config):
                             },
                             "force_wincap": False,
                             "force_freegame": True,
-                            "scatter_triggers": {3: 100, 4: 20, 5: 5, 6: 1},
+                            "scatter_triggers": {3: 1},
+                        },
+                    ),
+                ],
+            ),
+            # Ultimate Mining - guaranteed 4 scatters, pickaxe collection (cost 250x)
+            BetMode(
+                name="crazy_mining",
+                cost=250.0,
+                rtp=self.rtp,
+                max_win=mode_maxwins["crazy_mining"],
+                auto_close_disabled=False,
+                is_feature=False,
+                is_buybonus=True,
+                distributions=[
+                    Distribution(
+                        criteria="freegame",
+                        quota=1,
+                        conditions={
+                            "reel_weights": {
+                                self.basegame_type: {"BN0": 1},
+                                self.freegame_type: {"FG1": 1},
+                            },
+                            "force_wincap": False,
+                            "force_freegame": True,
+                            "scatter_triggers": {4: 1},
+                        },
+                    ),
+                ],
+            ),
+            # Mining Bonanza - guaranteed 5 scatters, enhanced pickaxe (cost 500x)
+            BetMode(
+                name="ultimate_mining",
+                cost=500.0,
+                rtp=self.rtp,
+                max_win=mode_maxwins["ultimate_mining"],
+                auto_close_disabled=False,
+                is_feature=False,
+                is_buybonus=True,
+                distributions=[
+                    Distribution(
+                        criteria="freegame",
+                        quota=1,
+                        conditions={
+                            "reel_weights": {
+                                self.basegame_type: {"BN0": 1},
+                                self.freegame_type: {"FG1": 1},
+                            },
+                            "force_wincap": False,
+                            "force_freegame": True,
+                            "scatter_triggers": {5: 1},
                         },
                     ),
                 ],

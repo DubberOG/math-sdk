@@ -18,7 +18,10 @@ if __name__ == "__main__":
 
     num_sim_args = {
         "base": int(1e6),
-        "bonus": int(1e5),
+        "bonus_boost": int(1e5),
+        "free_spins": int(1e5),
+        "crazy_mining": int(1e5),
+        "ultimate_mining": int(1e5),
     }
 
     run_conditions = {
@@ -27,7 +30,7 @@ if __name__ == "__main__":
         "run_analysis": True,
         "run_format_checks": True,
     }
-    target_modes = ["base", "bonus"]
+    target_modes = ["base", "bonus_boost", "free_spins", "crazy_mining", "ultimate_mining"]
 
     config = GameConfig()
     gamestate = GameState(config)
