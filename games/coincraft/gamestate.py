@@ -105,8 +105,8 @@ class GameState(GameStateOverride):
         - When all lives lost, phase 1 ends
         - Min total hits: 5, Max total hits: 30
         """
-        MAX_TOTAL_HITS = 30
-        MIN_TOTAL_HITS = 5
+        MAX_TOTAL_HITS = 20
+        MIN_TOTAL_HITS = 3
 
         lives = tier["lives"]
         removed_blockers = tier["removed_blockers"]
@@ -172,7 +172,10 @@ class GameState(GameStateOverride):
                         "position": [reel_idx, row_idx],
                     })
 
-            if not pickaxes_this_spin:
+            if pickaxes_this_spin:
+                # Found pickaxe(s) - reset lives back to max
+                lives = tier["lives"]
+            else:
                 lives -= 1
                 self.book.add_event({
                     "type": "pickaxeLifeLost",
@@ -233,13 +236,16 @@ class GameState(GameStateOverride):
         self._collected_pickaxes = []
         self._bonus_tier = None
 
-    def apply_pickaxe_hits(self, remaining_hits, tier, is_bonus_buy=False):
-        """Use pickaxe hits to destroy blockers on the board."""
+    def apply_pickaxe_hits(self, remaining_hits, tier, is_bonus_buy=False, pickaxe_type="bronze"):
+        """Use pickaxe hits to attempt destroying blockers on the board.
+        Each hit is consumed regardless of whether it destroys the blocker.
+        Destroy chance depends on pickaxe type vs blocker tier."""
         removed_blockers = tier["removed_blockers"] if tier else []
         blocker_cfg_map = (
             self.config.blocker_config_bonus if is_bonus_buy and hasattr(self.config, 'blocker_config_bonus')
             else self.config.blocker_config
         )
+        destroy_chances = self.config.pickaxe_destroy_chance.get(pickaxe_type, {})
 
         for reel_idx, reel in enumerate(self.board):
             if remaining_hits <= 0:
@@ -248,22 +254,34 @@ class GameState(GameStateOverride):
                 if remaining_hits <= 0:
                     break
                 if symbol.name in self.config.blocker_config:
-                    # Skip blockers already removed by tier
                     if symbol.name in removed_blockers:
                         continue
 
-                    blocker_cfg = blocker_cfg_map.get(symbol.name, self.config.blocker_config[symbol.name])
-                    # Pickaxe always destroys - use discrete weighted values
-                    mult = random.choices(blocker_cfg["values"], weights=blocker_cfg["weights"])[0]
-                    self.win_manager.update_spinwin(mult)
+                    # Consume hit regardless of outcome
                     remaining_hits -= 1
+                    chance = destroy_chances.get(symbol.name, 0)
 
-                    self.book.add_event({
-                        "type": "pickaxeUsed",
-                        "position": [reel_idx, row_idx],
-                        "blockerType": symbol.name,
-                        "multiplier": mult,
-                        "hitsRemaining": remaining_hits,
-                    })
+                    if random.random() < chance:
+                        blocker_cfg = blocker_cfg_map.get(symbol.name, self.config.blocker_config[symbol.name])
+                        mult = random.choices(blocker_cfg["values"], weights=blocker_cfg["weights"])[0]
+                        self.win_manager.update_spinwin(mult)
+
+                        self.book.add_event({
+                            "type": "pickaxeUsed",
+                            "position": [reel_idx, row_idx],
+                            "blockerType": symbol.name,
+                            "multiplier": mult,
+                            "hitsRemaining": remaining_hits,
+                            "destroyed": True,
+                        })
+                    else:
+                        self.book.add_event({
+                            "type": "pickaxeUsed",
+                            "position": [reel_idx, row_idx],
+                            "blockerType": symbol.name,
+                            "multiplier": 0,
+                            "hitsRemaining": remaining_hits,
+                            "destroyed": False,
+                        })
 
         return remaining_hits

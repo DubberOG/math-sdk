@@ -79,10 +79,19 @@ class GameConfig(Config):
 
         # Pickaxe config for bonus game
         self.pickaxe_config = {
-            "bronze":  {"min_hits": 1, "max_hits": 3},
-            "silver":  {"min_hits": 1, "max_hits": 5},
-            "gold":    {"min_hits": 3, "max_hits": 10},
-            "diamond": {"min_hits": 5, "max_hits": 15},
+            "bronze":  {"min_hits": 1, "max_hits": 2},
+            "silver":  {"min_hits": 1, "max_hits": 3},
+            "gold":    {"min_hits": 2, "max_hits": 5},
+            "diamond": {"min_hits": 3, "max_hits": 10},
+        }
+
+        # Pickaxe destroy chance per blocker tier
+        # Each hit is consumed regardless of success
+        self.pickaxe_destroy_chance = {
+            "bronze":  {"B1": 0.90, "B2": 0.30, "B3": 0.05, "B4": 0.0},
+            "silver":  {"B1": 0.95, "B2": 0.60, "B3": 0.20, "B4": 0.02},
+            "gold":    {"B1": 1.0,  "B2": 0.90, "B3": 0.50, "B4": 0.10},
+            "diamond": {"B1": 1.0,  "B2": 1.0,  "B3": 0.80, "B4": 0.40},
         }
 
         # Bonus tiers based on scatter count:

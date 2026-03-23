@@ -51,13 +51,20 @@ BONUS_TIERS = {
 }
 
 PICKAXE_CONFIG = {
-    "bronze": {"min_hits": 1, "max_hits": 3},
-    "silver": {"min_hits": 1, "max_hits": 5},
-    "gold": {"min_hits": 3, "max_hits": 10},
-    "diamond": {"min_hits": 5, "max_hits": 15},
+    "bronze": {"min_hits": 1, "max_hits": 2},
+    "silver": {"min_hits": 1, "max_hits": 3},
+    "gold": {"min_hits": 2, "max_hits": 5},
+    "diamond": {"min_hits": 3, "max_hits": 10},
 }
 PICKAXE_WEIGHTS = {"bronze": 50, "silver": 30, "gold": 15, "diamond": 5}
 PICKAXE_WEIGHT_TOTAL = sum(PICKAXE_WEIGHTS.values())
+
+PICKAXE_DESTROY = {
+    "bronze":  {"B1": 0.90, "B2": 0.30, "B3": 0.05, "B4": 0.0},
+    "silver":  {"B1": 0.95, "B2": 0.60, "B3": 0.20, "B4": 0.02},
+    "gold":    {"B1": 1.0,  "B2": 0.90, "B3": 0.50, "B4": 0.10},
+    "diamond": {"B1": 1.0,  "B2": 1.0,  "B3": 0.80, "B4": 0.40},
+}
 
 WINCAP = 25000
 
@@ -140,12 +147,14 @@ def pick_pickaxe_type():
 
 
 def run_pickaxe_collection(tier, reels):
-    """Phase 1: Collect pickaxes."""
-    MAX_HITS = 30
-    MIN_HITS = 5
+    """Phase 1: Pure collection - no wins, just gather pickaxes.
+    Lives reset to max when pickaxe found. 3 misses in a row = phase over."""
+    MAX_HITS = 20
+    MIN_HITS = 3
     lives = tier["lives"]
     removed = tier["removed_blockers"]
     total_hits = 0
+    collected = []  # list of (pickaxe_type, hits)
 
     while lives > 0 and total_hits < MAX_HITS:
         board = draw_board(reels)
@@ -165,10 +174,53 @@ def run_pickaxe_collection(tier, reels):
                         hits = random.randint(cfg["min_hits"], cfg["max_hits"])
                         hits = min(hits, MAX_HITS - total_hits)
                         total_hits += hits
-        if not found:
+                        collected.append((pt, hits))
+        if found:
+            lives = tier["lives"]
+        else:
             lives -= 1
 
-    return max(total_hits, MIN_HITS)
+    return max(total_hits, MIN_HITS), collected
+
+
+def apply_pickaxe_hits(board, collected, tier, blocker_cfg):
+    """Apply pickaxe hits during free spins. Each hit consumed regardless of success.
+    Destroy chance depends on pickaxe type vs blocker tier."""
+    removed = tier.get("removed_blockers", [])
+    total_win = 0
+
+    hit_queue = []
+    for pt, hits in collected:
+        hit_queue.extend([pt] * hits)
+
+    hit_idx = 0
+    for r in range(NUM_REELS):
+        if hit_idx >= len(hit_queue):
+            break
+        for row in range(NUM_ROWS):
+            if hit_idx >= len(hit_queue):
+                break
+            s = board[r][row]
+            if s in blocker_cfg and s not in removed:
+                pt = hit_queue[hit_idx]
+                hit_idx += 1
+                chance = PICKAXE_DESTROY.get(pt, {}).get(s, 0)
+                if random.random() < chance:
+                    cfg = blocker_cfg[s]
+                    total_win += random.choices(cfg["values"], weights=cfg["weights"])[0]
+
+    remaining = len(hit_queue) - hit_idx
+    if remaining <= 0:
+        return total_win, []
+    new_collected = []
+    left = remaining
+    for pt, h in reversed(collected):
+        if left <= 0:
+            break
+        take = min(h, left)
+        new_collected.insert(0, (pt, take))
+        left -= take
+    return total_win, new_collected
 
 
 def run_bonus(scatter_count, fg_reels, base_reels, blocker_cfg):
@@ -177,33 +229,23 @@ def run_bonus(scatter_count, fg_reels, base_reels, blocker_cfg):
     tier = BONUS_TIERS[tier_key]
 
     total_win = 0
-    pickaxe_hits = 0
+    collected = []
 
-    # Phase 1: Pickaxe collection
+    # Phase 1: Pure pickaxe collection (no wins)
     if tier["pickaxe_mode"]:
-        pickaxe_hits = run_pickaxe_collection(tier, base_reels)
+        _, collected = run_pickaxe_collection(tier, base_reels)
 
     # Phase 2: Free spins
-    remaining_hits = pickaxe_hits
     for _ in range(tier["free_spins"]):
         board = draw_board(fg_reels)
 
         # Ways wins
         total_win += eval_ways(board)
 
-        # Apply pickaxe hits (auto-destroy blockers)
-        if remaining_hits > 0:
-            for r in range(NUM_REELS):
-                if remaining_hits <= 0:
-                    break
-                for row in range(NUM_ROWS):
-                    if remaining_hits <= 0:
-                        break
-                    s = board[r][row]
-                    if s in BLOCKER_CONFIG and s not in tier.get("removed_blockers", []):
-                        cfg = blocker_cfg[s]
-                        total_win += random.choices(cfg["values"], weights=cfg["weights"])[0]
-                        remaining_hits -= 1
+        # Apply pickaxe hits (with destroy chance, hits consumed regardless)
+        if collected:
+            pickaxe_win, collected = apply_pickaxe_hits(board, collected, tier, blocker_cfg)
+            total_win += pickaxe_win
 
         # TNT + blocker evaluation
         total_win += eval_blockers(board, blocker_cfg)
