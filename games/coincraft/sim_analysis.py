@@ -33,14 +33,14 @@ BLOCKER_CONFIG = {
     "B1": {"destroy_chance": 0.60, "values": [1, 2, 3, 4], "weights": [40, 30, 20, 10]},
     "B2": {"destroy_chance": 0.30, "values": [5, 10, 15, 20], "weights": [40, 30, 20, 10]},
     "B3": {"destroy_chance": 0.10, "values": [25, 50, 100, 150], "weights": [50, 30, 15, 5]},
-    "B4": {"destroy_chance": 0.01, "values": [250, 500, 1000, 2500, 5000], "weights": [40, 30, 18, 9, 3]},
+    "B4": {"destroy_chance": 0.01, "values": [250, 500, 1000, 2500, 5000, 25000], "weights": [40, 30, 18, 9, 2, 1]},
 }
 
 BLOCKER_CONFIG_BONUS = {
     "B1": {"destroy_chance": 0.70, "values": [1, 2, 3, 4], "weights": [40, 30, 20, 10]},
     "B2": {"destroy_chance": 0.40, "values": [5, 10, 15, 20], "weights": [40, 30, 20, 10]},
     "B3": {"destroy_chance": 0.15, "values": [25, 50, 100, 150], "weights": [50, 30, 15, 5]},
-    "B4": {"destroy_chance": 0.02, "values": [250, 500, 1000, 2500, 5000], "weights": [40, 30, 18, 9, 3]},
+    "B4": {"destroy_chance": 0.02, "values": [250, 500, 1000, 2500, 5000, 25000], "weights": [40, 30, 18, 9, 2.5, 0.5]},
 }
 
 BONUS_TIERS = {
