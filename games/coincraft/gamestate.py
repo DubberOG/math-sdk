@@ -253,10 +253,8 @@ class GameState(GameStateOverride):
                         continue
 
                     blocker_cfg = blocker_cfg_map.get(symbol.name, self.config.blocker_config[symbol.name])
-                    # Pickaxe always destroys
-                    min_steps = int(blocker_cfg["min_mult"] * 10)
-                    max_steps = int(blocker_cfg["max_mult"] * 10)
-                    mult = random.randint(min_steps, max_steps) / 10.0
+                    # Pickaxe always destroys - use discrete weighted values
+                    mult = random.choices(blocker_cfg["values"], weights=blocker_cfg["weights"])[0]
                     self.win_manager.update_spinwin(mult)
                     remaining_hits -= 1
 

@@ -21,35 +21,35 @@ class GameConfig(Config):
         self.working_name = "coincraft"
         self.wincap = 25000
         self.win_type = "ways"
-        self.rtp = 0.98
+        self.rtp = 0.96
         self.construct_paths()
 
-        # Game Dimensions - 6 reels x 4 rows
-        self.num_reels = 6
+        # Game Dimensions - 5 reels x 4 rows
+        self.num_reels = 5
         self.num_rows = [4] * self.num_reels
 
         # Paytable - scaled ×0.88 to target 98% RTP
         # Premium symbols (H1-H4): pay from 2+ on reels 1-2
         # Basic symbols (L1-L5): pay from 3+ on reels 1-3
         self.paytable = {
-            # H1 - Miner-man (3+ reels to pay)
-            (6, "H1"): 8, (5, "H1"): 3, (4, "H1"): 1.5, (3, "H1"): 0.6,
-            # H2 - Miner-girl (3+ reels to pay)
-            (6, "H2"): 6, (5, "H2"): 2.5, (4, "H2"): 1.2, (3, "H2"): 0.5,
-            # H3 - Wolf (3+ reels to pay)
-            (6, "H3"): 5, (5, "H3"): 2, (4, "H3"): 1, (3, "H3"): 0.3,
-            # H4 - Sheep (3+ reels to pay)
-            (6, "H4"): 3, (5, "H4"): 1.2, (4, "H4"): 0.6, (3, "H4"): 0.2,
+            # H1 - Miner-man
+            (5, "H1"): 15, (4, "H1"): 6, (3, "H1"): 2, (2, "H1"): 0.5,
+            # H2 - Miner-girl
+            (5, "H2"): 12, (4, "H2"): 5, (3, "H2"): 1.5, (2, "H2"): 0.4,
+            # H3 - Wolf
+            (5, "H3"): 10, (4, "H3"): 4, (3, "H3"): 1, (2, "H3"): 0.3,
+            # H4 - Sheep
+            (5, "H4"): 6, (4, "H4"): 2.5, (3, "H4"): 0.8, (2, "H4"): 0.2,
             # L1 - A
-            (6, "L1"): 1.5, (5, "L1"): 0.6, (4, "L1"): 0.3, (3, "L1"): 0.1,
+            (5, "L1"): 3, (4, "L1"): 1.2, (3, "L1"): 0.4,
             # L2 - K
-            (6, "L2"): 1.2, (5, "L2"): 0.5, (4, "L2"): 0.2, (3, "L2"): 0.1,
+            (5, "L2"): 2.5, (4, "L2"): 1, (3, "L2"): 0.3,
             # L3 - Q
-            (6, "L3"): 1, (5, "L3"): 0.4, (4, "L3"): 0.2, (3, "L3"): 0.1,
+            (5, "L3"): 2, (4, "L3"): 0.8, (3, "L3"): 0.2,
             # L4 - J
-            (6, "L4"): 0.8, (5, "L4"): 0.3, (4, "L4"): 0.2, (3, "L4"): 0.1,
+            (5, "L4"): 1.5, (4, "L4"): 0.6, (3, "L4"): 0.2,
             # L5 - 10
-            (6, "L5"): 0.6, (5, "L5"): 0.2, (4, "L5"): 0.1, (3, "L5"): 0.1,
+            (5, "L5"): 1, (4, "L5"): 0.4, (3, "L5"): 0.1,
         }
 
         self.include_padding = True
@@ -57,22 +57,24 @@ class GameConfig(Config):
             "wild": ["W"],       # TNT
             "scatter": ["S"],    # Bonus trigger
             "multiplier": [],
-            "blocker": ["B1", "B2", "B3"],  # Bronze, Silver, Diamond
+            "blocker": ["B1", "B2", "B3", "B4"],  # Bronze, Silver, Gold, Diamond
+            "empty": ["X"],      # Non-paying filler (dead spin positions)
         }
 
-        # Blocker properties - multipliers are per-bet, applied as instant win
+        # Blocker properties - discrete weighted steps
         self.blocker_config = {
-            "B1": {"destroy_chance": 1.0, "min_mult": 0.5, "max_mult": 2},      # Bronze
-            "B2": {"destroy_chance": 0.75, "min_mult": 2, "max_mult": 10},      # Silver
-            "B3": {"destroy_chance": 0.10, "min_mult": 10, "max_mult": 100},    # Diamond
+            "B1": {"destroy_chance": 0.60, "values": [1, 2, 3, 4], "weights": [40, 30, 20, 10]},
+            "B2": {"destroy_chance": 0.30, "values": [5, 10, 15, 20], "weights": [40, 30, 20, 10]},
+            "B3": {"destroy_chance": 0.10, "values": [25, 50, 100, 150], "weights": [50, 30, 15, 5]},
+            "B4": {"destroy_chance": 0.01, "values": [250, 500, 1000, 2500, 5000], "weights": [40, 30, 18, 9, 3]},
         }
 
-        # Enhanced blocker config for bonus buy freegame (higher multipliers)
-        # Target: ~98x total from 10 free spins (FG1 reels)
+        # Enhanced blocker config for bonus buy freegame
         self.blocker_config_bonus = {
-            "B1": {"destroy_chance": 1.0, "min_mult": 0.5, "max_mult": 2},      # Bronze enhanced
-            "B2": {"destroy_chance": 0.75, "min_mult": 1, "max_mult": 8},       # Silver enhanced
-            "B3": {"destroy_chance": 0.12, "min_mult": 8, "max_mult": 65},      # Diamond enhanced
+            "B1": {"destroy_chance": 0.80, "values": [1, 2, 3, 4], "weights": [40, 30, 20, 10]},
+            "B2": {"destroy_chance": 0.50, "values": [5, 10, 15, 20], "weights": [35, 30, 20, 15]},
+            "B3": {"destroy_chance": 0.15, "values": [25, 50, 100, 150], "weights": [45, 30, 15, 10]},
+            "B4": {"destroy_chance": 0.03, "values": [250, 500, 1000, 2500, 5000], "weights": [35, 30, 20, 10, 5]},
         }
 
         # Pickaxe config for bonus game

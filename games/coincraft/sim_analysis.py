@@ -15,32 +15,32 @@ NUM_REELS = 5
 NUM_ROWS = 4
 
 PAYTABLE = {
-    (5, "H1"): 15, (4, "H1"): 6, (3, "H1"): 2, (2, "H1"): 0.5,
-    (5, "H2"): 12, (4, "H2"): 5, (3, "H2"): 1.5, (2, "H2"): 0.4,
-    (5, "H3"): 10, (4, "H3"): 4, (3, "H3"): 1, (2, "H3"): 0.3,
-    (5, "H4"): 6, (4, "H4"): 2.5, (3, "H4"): 0.8, (2, "H4"): 0.2,
-    (5, "L1"): 3, (4, "L1"): 1.2, (3, "L1"): 0.4,
-    (5, "L2"): 2.5, (4, "L2"): 1, (3, "L2"): 0.3,
-    (5, "L3"): 2, (4, "L3"): 0.8, (3, "L3"): 0.2,
-    (5, "L4"): 1.5, (4, "L4"): 0.6, (3, "L4"): 0.15,
-    (5, "L5"): 1, (4, "L5"): 0.4, (3, "L5"): 0.1,
+    (5, "H1"): 10.5, (4, "H1"): 4.2, (3, "H1"): 1.4, (2, "H1"): 0.35,
+    (5, "H2"): 8.5, (4, "H2"): 3.5, (3, "H2"): 1.05, (2, "H2"): 0.28,
+    (5, "H3"): 7, (4, "H3"): 2.8, (3, "H3"): 0.7, (2, "H3"): 0.2,
+    (5, "H4"): 4.2, (4, "H4"): 1.75, (3, "H4"): 0.56, (2, "H4"): 0.14,
+    (5, "L1"): 2.1, (4, "L1"): 0.85, (3, "L1"): 0.28,
+    (5, "L2"): 1.75, (4, "L2"): 0.7, (3, "L2"): 0.21,
+    (5, "L3"): 1.4, (4, "L3"): 0.56, (3, "L3"): 0.14,
+    (5, "L4"): 1.05, (4, "L4"): 0.42, (3, "L4"): 0.1,
+    (5, "L5"): 0.7, (4, "L5"): 0.28, (3, "L5"): 0.07,
 }
 
 WILDS = {"W"}
 PAY_SYMBOLS = ["H1", "H2", "H3", "H4", "L1", "L2", "L3", "L4", "L5"]
 
 BLOCKER_CONFIG = {
-    "B1": {"destroy_chance": 0.60, "min_mult": 0.5, "max_mult": 2},
-    "B2": {"destroy_chance": 0.30, "min_mult": 5, "max_mult": 20},
-    "B3": {"destroy_chance": 0.10, "min_mult": 25, "max_mult": 200},
-    "B4": {"destroy_chance": 0.01, "min_mult": 250, "max_mult": 5000},
+    "B1": {"destroy_chance": 0.60, "values": [1, 2, 3, 4], "weights": [40, 30, 20, 10]},
+    "B2": {"destroy_chance": 0.30, "values": [5, 10, 15, 20], "weights": [40, 30, 20, 10]},
+    "B3": {"destroy_chance": 0.10, "values": [25, 50, 100, 150], "weights": [50, 30, 15, 5]},
+    "B4": {"destroy_chance": 0.01, "values": [250, 500, 1000, 2500, 5000], "weights": [40, 30, 18, 9, 3]},
 }
 
 BLOCKER_CONFIG_BONUS = {
-    "B1": {"destroy_chance": 0.70, "min_mult": 0.5, "max_mult": 3},
-    "B2": {"destroy_chance": 0.40, "min_mult": 5, "max_mult": 20},
-    "B3": {"destroy_chance": 0.15, "min_mult": 25, "max_mult": 100},
-    "B4": {"destroy_chance": 0.02, "min_mult": 250, "max_mult": 2000},
+    "B1": {"destroy_chance": 0.70, "values": [1, 2, 3, 4], "weights": [40, 30, 20, 10]},
+    "B2": {"destroy_chance": 0.40, "values": [5, 10, 15, 20], "weights": [40, 30, 20, 10]},
+    "B3": {"destroy_chance": 0.15, "values": [25, 50, 100, 150], "weights": [50, 30, 15, 5]},
+    "B4": {"destroy_chance": 0.02, "values": [250, 500, 1000, 2500, 5000], "weights": [40, 30, 18, 9, 3]},
 }
 
 BONUS_TIERS = {
@@ -121,9 +121,7 @@ def eval_blockers(board, config=BLOCKER_CONFIG):
         if num_tnt > 0:
             destroyed = any(random.random() < cfg["destroy_chance"] for _ in range(num_tnt))
             if destroyed:
-                min_s = int(cfg["min_mult"] * 10)
-                max_s = int(cfg["max_mult"] * 10)
-                total += random.randint(min_s, max_s) / 10.0
+                total += random.choices(cfg["values"], weights=cfg["weights"])[0]
     return total
 
 
@@ -204,9 +202,7 @@ def run_bonus(scatter_count, fg_reels, base_reels, blocker_cfg):
                     s = board[r][row]
                     if s in BLOCKER_CONFIG and s not in tier.get("removed_blockers", []):
                         cfg = blocker_cfg[s]
-                        min_s = int(cfg["min_mult"] * 10)
-                        max_s = int(cfg["max_mult"] * 10)
-                        total_win += random.randint(min_s, max_s) / 10.0
+                        total_win += random.choices(cfg["values"], weights=cfg["weights"])[0]
                         remaining_hits -= 1
 
         # TNT + blocker evaluation

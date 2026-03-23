@@ -48,9 +48,7 @@ class GameExecutables(GameCalculations):
                         break
 
                 if destroyed:
-                    min_steps = int(blocker_cfg["min_mult"] * 10)
-                    max_steps = int(blocker_cfg["max_mult"] * 10)
-                    mult = random.randint(min_steps, max_steps) / 10.0
+                    mult = random.choices(blocker_cfg["values"], weights=blocker_cfg["weights"])[0]
                     blocker_wins += mult
                     self.book.add_event({
                         "type": "blockerDestroy",

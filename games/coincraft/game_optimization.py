@@ -20,7 +20,11 @@ class OptimizationSetup:
         self.game_config.opt_params = {
             "base": {
                 "conditions": {
-                    "basegame": ConstructConditions(hr=3.5, rtp=0.98).return_dict(),
+                    "0": ConstructConditions(rtp=0, av_win=0, search_conditions=0).return_dict(),
+                    "freegame": ConstructConditions(
+                        rtp=0.36, hr=250, search_conditions={"symbol": "scatter"}
+                    ).return_dict(),
+                    "basegame": ConstructConditions(hr=3.0, rtp=0.60).return_dict(),
                 },
                 "scaling": ConstructScaling(
                     [
@@ -69,7 +73,7 @@ class OptimizationSetup:
             },
             "bonus": {
                 "conditions": {
-                    "freegame": ConstructConditions(rtp=0.98, hr="x").return_dict(),
+                    "freegame": ConstructConditions(rtp=0.96, hr="x").return_dict(),
                 },
                 "scaling": ConstructScaling(
                     [
