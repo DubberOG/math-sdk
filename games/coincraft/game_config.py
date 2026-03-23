@@ -124,8 +124,34 @@ class GameConfig(Config):
                 is_buybonus=False,
                 distributions=[
                     Distribution(
+                        criteria="freegame",
+                        quota=0.05,
+                        conditions={
+                            "reel_weights": {
+                                self.basegame_type: {"BR0": 1},
+                                self.freegame_type: {"FG0": 1},
+                            },
+                            "force_wincap": False,
+                            "force_freegame": True,
+                            "scatter_triggers": {3: 100, 4: 20, 5: 5},
+                        },
+                    ),
+                    Distribution(
+                        criteria="0",
+                        quota=0.60,
+                        win_criteria=0.0,
+                        conditions={
+                            "reel_weights": {
+                                self.basegame_type: {"BR0": 1},
+                                self.freegame_type: {"FG0": 1},
+                            },
+                            "force_wincap": False,
+                            "force_freegame": False,
+                        },
+                    ),
+                    Distribution(
                         criteria="basegame",
-                        quota=1.0,
+                        quota=0.35,
                         conditions={
                             "reel_weights": {
                                 self.basegame_type: {"BR0": 1},

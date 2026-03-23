@@ -69,8 +69,8 @@ class GameState(GameStateOverride):
 
             self.win_manager.update_gametype_wins(self.gametype)
 
-            # Check scatter condition for bonus
-            if self.check_fs_condition() and self.check_freespin_entry():
+            # Check scatter condition for bonus (only run for freegame criteria)
+            if self.criteria == "freegame" and self.check_fs_condition() and self.check_freespin_entry():
                 scatter_count = self.get_scatter_count()
                 tier = self.get_bonus_tier(scatter_count)
 
@@ -80,7 +80,7 @@ class GameState(GameStateOverride):
                 if tier["pickaxe_mode"]:
                     self._collected_pickaxes = self.run_pickaxe_collection(tier)
 
-                # Phase 2: Free spins - use our own trigger instead of SDK's
+                # Phase 2: Free spins
                 self.record({
                     "kind": scatter_count,
                     "symbol": "scatter",
