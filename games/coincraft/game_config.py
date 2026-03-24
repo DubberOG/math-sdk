@@ -59,7 +59,7 @@ class GameConfig(Config):
             "scatter": ["S"],    # Bonus trigger
             "multiplier": [],
             "blocker": ["B1", "B2", "B3", "B4"],  # Bronze, Silver, Gold, Diamond
-            "empty": ["X"],      # Non-paying filler (dead spin positions)
+            # No empty/X symbols - dead spins occur naturally from symbol distribution
         }
 
         # Blocker properties - discrete weighted steps
