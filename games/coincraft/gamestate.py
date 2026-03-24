@@ -61,15 +61,12 @@ class GameState(GameStateOverride):
             self.reset_book()
             self.draw_board(emit_event=True)
 
-            # Evaluate ways wins
-            self.evaluate_ways_board()
-
-            # Evaluate blocker interactions with TNT
-            self.evaluate_blockers()
+            # Run cascade loop (ways wins + TNT explosions + new symbols)
+            self.run_cascade_loop(use_bonus_config=False)
 
             self.win_manager.update_gametype_wins(self.gametype)
 
-            # Check scatter condition for bonus (only run for freegame criteria)
+            # Check scatter condition for bonus
             if self.criteria == "freegame" and self.check_fs_condition() and self.check_freespin_entry():
                 scatter_count = self.get_scatter_count()
                 tier = self.get_bonus_tier(scatter_count)
@@ -80,7 +77,7 @@ class GameState(GameStateOverride):
                 if tier["pickaxe_mode"]:
                     self._collected_pickaxes = self.run_pickaxe_collection(tier)
 
-                # Phase 2: Free spins
+                # Phase 2: Free spins with cascade
                 self.record({
                     "kind": scatter_count,
                     "symbol": "scatter",
@@ -202,7 +199,7 @@ class GameState(GameStateOverride):
         return collected
 
     def run_freespin(self) -> None:
-        """Bonus game: enhanced base game with blockers.
+        """Bonus game with cascade: enhanced base game with blockers.
         If pickaxes were collected, they auto-destroy blockers.
         Uses enhanced blocker config for bonus buy mode.
         """
@@ -211,28 +208,23 @@ class GameState(GameStateOverride):
         tier = getattr(self, '_bonus_tier', None)
         remaining_hits = sum(p["hits"] for p in pickaxes)
 
-        # Use enhanced blocker config for bonus buy (FG1 reels)
         is_bonus_buy = hasattr(self.config, 'blocker_config_bonus') and self.betmode == 'bonus'
 
         while self.fs < self.tot_fs:
             self.update_freespin()
             self.draw_board(emit_event=True)
 
-            # Evaluate ways wins
-            self.evaluate_ways_board()
-
-            # Apply pickaxe hits to blockers before TNT evaluation
+            # Apply pickaxe hits before cascade
             if remaining_hits > 0:
                 remaining_hits = self.apply_pickaxe_hits(remaining_hits, tier, is_bonus_buy)
 
-            # Evaluate remaining blockers with TNT (use enhanced config for bonus buy)
-            self.evaluate_blockers(use_bonus_config=is_bonus_buy)
+            # Run cascade loop (ways + TNT + fill, repeat)
+            self.run_cascade_loop(use_bonus_config=is_bonus_buy)
 
             self.win_manager.update_gametype_wins(self.gametype)
 
         self.end_freespin()
 
-        # Clean up
         self._collected_pickaxes = []
         self._bonus_tier = None
 

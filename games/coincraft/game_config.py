@@ -24,32 +24,33 @@ class GameConfig(Config):
         self.rtp = 0.96
         self.construct_paths()
 
-        # Game Dimensions - 5 reels x 4 rows
-        self.num_reels = 5
+        # Game Dimensions - 6 reels x 4 rows
+        self.num_reels = 6
         self.num_rows = [4] * self.num_reels
 
-        # Paytable - scaled ×0.88 to target 98% RTP
-        # Premium symbols (H1-H4): pay from 2+ on reels 1-2
-        # Basic symbols (L1-L5): pay from 3+ on reels 1-3
+        # Paytable - 6 reels, cascade mechanic
+        # H1 (Miner-man): pays from 2+ (unique)
+        # H2-H4: pay from 3+
+        # L1-L5: pay from 3+
         self.paytable = {
-            # H1 - Miner-man
-            (5, "H1"): 15, (4, "H1"): 6, (3, "H1"): 2, (2, "H1"): 0.5,
-            # H2 - Miner-girl
-            (5, "H2"): 12, (4, "H2"): 5, (3, "H2"): 1.5, (2, "H2"): 0.4,
-            # H3 - Wolf
-            (5, "H3"): 10, (4, "H3"): 4, (3, "H3"): 1, (2, "H3"): 0.3,
-            # H4 - Sheep
-            (5, "H4"): 6, (4, "H4"): 2.5, (3, "H4"): 0.8, (2, "H4"): 0.2,
+            # H1 - Miner-man (pays from 2+)
+            (6, "H1"): 25, (5, "H1"): 10, (4, "H1"): 5, (3, "H1"): 2, (2, "H1"): 0.5,
+            # H2 - Canary bird
+            (6, "H2"): 20, (5, "H2"): 8, (4, "H2"): 4, (3, "H2"): 1.5,
+            # H3 - Bat
+            (6, "H3"): 15, (5, "H3"): 6, (4, "H3"): 3, (3, "H3"): 1,
+            # H4 - Lantern
+            (6, "H4"): 10, (5, "H4"): 4, (4, "H4"): 2, (3, "H4"): 0.8,
             # L1 - A
-            (5, "L1"): 3, (4, "L1"): 1.2, (3, "L1"): 0.4,
+            (6, "L1"): 5, (5, "L1"): 2, (4, "L1"): 1, (3, "L1"): 0.4,
             # L2 - K
-            (5, "L2"): 2.5, (4, "L2"): 1, (3, "L2"): 0.3,
+            (6, "L2"): 4, (5, "L2"): 1.5, (4, "L2"): 0.8, (3, "L2"): 0.3,
             # L3 - Q
-            (5, "L3"): 2, (4, "L3"): 0.8, (3, "L3"): 0.2,
+            (6, "L3"): 3, (5, "L3"): 1.2, (4, "L3"): 0.6, (3, "L3"): 0.2,
             # L4 - J
-            (5, "L4"): 1.5, (4, "L4"): 0.6, (3, "L4"): 0.2,
+            (6, "L4"): 2.5, (5, "L4"): 1, (4, "L4"): 0.5, (3, "L4"): 0.2,
             # L5 - 10
-            (5, "L5"): 1, (4, "L5"): 0.4, (3, "L5"): 0.1,
+            (6, "L5"): 2, (5, "L5"): 0.8, (4, "L5"): 0.4, (3, "L5"): 0.1,
         }
 
         self.include_padding = True
@@ -115,7 +116,7 @@ class GameConfig(Config):
         # BN0 = bonus trigger (more scatters for buy bonus)
         # FG0 = freegame from natural bonus (more TNT/blockers, no scatters)
         # FG1 = freegame from buy bonus (even richer, no scatters)
-        reels = {"BR0": "BR0.csv", "BN0": "BN0.csv", "FG0": "FG0.csv", "FG1": "FG1.csv"}
+        reels = {"BR0": "BR0.csv", "BN0": "BN0.csv", "FG0": "FG0.csv", "FG1": "FG1.csv", "WCAP": "WCAP.csv"}
         self.reels = {}
         for r, f in reels.items():
             self.reels[r] = self.read_reels_csv(os.path.join(self.reels_path, f))

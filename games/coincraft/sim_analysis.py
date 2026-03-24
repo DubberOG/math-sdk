@@ -11,19 +11,19 @@ import time
 from collections import defaultdict
 
 # Game config inline for fast standalone execution
-NUM_REELS = 5
+NUM_REELS = 6
 NUM_ROWS = 4
 
 PAYTABLE = {
-    (5, "H1"): 15, (4, "H1"): 6, (3, "H1"): 2, (2, "H1"): 0.5,
-    (5, "H2"): 12, (4, "H2"): 5, (3, "H2"): 1.5, (2, "H2"): 0.4,
-    (5, "H3"): 10, (4, "H3"): 4, (3, "H3"): 1, (2, "H3"): 0.3,
-    (5, "H4"): 6, (4, "H4"): 2.5, (3, "H4"): 0.8, (2, "H4"): 0.2,
-    (5, "L1"): 3, (4, "L1"): 1.2, (3, "L1"): 0.4,
-    (5, "L2"): 2.5, (4, "L2"): 1, (3, "L2"): 0.3,
-    (5, "L3"): 2, (4, "L3"): 0.8, (3, "L3"): 0.2,
-    (5, "L4"): 1.5, (4, "L4"): 0.6, (3, "L4"): 0.2,
-    (5, "L5"): 1, (4, "L5"): 0.4, (3, "L5"): 0.1,
+    (6, "H1"): 25, (5, "H1"): 10, (4, "H1"): 5, (3, "H1"): 2, (2, "H1"): 0.5,
+    (6, "H2"): 20, (5, "H2"): 8, (4, "H2"): 4, (3, "H2"): 1.5,
+    (6, "H3"): 15, (5, "H3"): 6, (4, "H3"): 3, (3, "H3"): 1,
+    (6, "H4"): 10, (5, "H4"): 4, (4, "H4"): 2, (3, "H4"): 0.8,
+    (6, "L1"): 5, (5, "L1"): 2, (4, "L1"): 1, (3, "L1"): 0.4,
+    (6, "L2"): 4, (5, "L2"): 1.5, (4, "L2"): 0.8, (3, "L2"): 0.3,
+    (6, "L3"): 3, (5, "L3"): 1.2, (4, "L3"): 0.6, (3, "L3"): 0.2,
+    (6, "L4"): 2.5, (5, "L4"): 1, (4, "L4"): 0.5, (3, "L4"): 0.2,
+    (6, "L5"): 2, (5, "L5"): 0.8, (4, "L5"): 0.4, (3, "L5"): 0.1,
 }
 
 WILDS = {"W"}
@@ -109,8 +109,31 @@ def eval_ways(board):
     return total
 
 
-def get_winning_wild_positions(board):
-    """Find TNT positions that are part of a winning way."""
+def eval_blockers(board, config=BLOCKER_CONFIG):
+    """Evaluate TNT+blocker interactions. TNT always triggers (no winning way required).
+    Returns (total_win, destroyed_positions) for cascade."""
+    wild_pos = [(r, row) for r in range(NUM_REELS) for row in range(NUM_ROWS) if board[r][row] in WILDS]
+    blocker_pos = []
+    for r in range(NUM_REELS):
+        for row in range(NUM_ROWS):
+            s = board[r][row]
+            if s in config:
+                blocker_pos.append((r, row, s))
+
+    total = 0
+    destroyed = set()
+    for br, brow, bname in blocker_pos:
+        cfg = config[bname]
+        num_tnt = sum(1 for wr, wrow in wild_pos if abs(wr - br) <= 1 and abs(wrow - brow) <= 1)
+        if num_tnt > 0:
+            if any(random.random() < cfg["destroy_chance"] for _ in range(num_tnt)):
+                total += random.choices(cfg["values"], weights=cfg["weights"])[0]
+                destroyed.add((br, brow))
+    return total, destroyed
+
+
+def get_winning_positions(board):
+    """Get all positions involved in winning ways."""
     winning = set()
     for sym in PAY_SYMBOLS:
         ways, consec = 1, 0
@@ -124,32 +147,26 @@ def get_winning_wild_positions(board):
             else:
                 break
         if (consec, sym) in PAYTABLE:
-            for r, row in positions:
-                if board[r][row] in WILDS:
-                    winning.add((r, row))
+            winning.update(positions)
     return winning
 
 
-def eval_blockers(board, config=BLOCKER_CONFIG):
-    """Evaluate TNT+blocker interactions. Only TNTs in winning ways trigger."""
-    winning_wilds = get_winning_wild_positions(board)
-    wild_pos = list(winning_wilds)
-    blocker_pos = []
+def cascade_fill(board, reels, removed_positions):
+    """Remove symbols at positions and fill from above/reelstrip. Mutates board."""
+    reel_len = len(reels[0])
     for r in range(NUM_REELS):
-        for row in range(NUM_ROWS):
-            s = board[r][row]
-            if s in config:
-                blocker_pos.append((r, row, s))
-
-    total = 0
-    for br, brow, bname in blocker_pos:
-        cfg = config[bname]
-        num_tnt = sum(1 for wr, wrow in wild_pos if abs(wr - br) <= 1 and abs(wrow - brow) <= 1)
-        if num_tnt > 0:
-            destroyed = any(random.random() < cfg["destroy_chance"] for _ in range(num_tnt))
-            if destroyed:
-                total += random.choices(cfg["values"], weights=cfg["weights"])[0]
-    return total
+        # Collect rows to remove (sorted top to bottom)
+        removed_rows = sorted([row for rr, row in removed_positions if rr == r])
+        if not removed_rows:
+            continue
+        # Keep non-removed symbols, shift down
+        remaining = [board[r][row] for row in range(NUM_ROWS) if row not in removed_rows]
+        # Fill from reelstrip
+        needed = NUM_ROWS - len(remaining)
+        new_syms = []
+        for _ in range(needed):
+            new_syms.append(reels[r][random.randint(0, reel_len - 1)])
+        board[r] = new_syms + remaining  # new on top, remaining on bottom
 
 
 def count_scatters(board):
@@ -243,8 +260,40 @@ def apply_pickaxe_hits(board, collected, tier, blocker_cfg):
     return total_win, new_collected
 
 
+def run_cascade_spin(board, reels, blocker_cfg, max_cascades=20):
+    """Run a single spin with cascade. Returns total win from all cascades."""
+    total_win = 0
+    for _ in range(max_cascades):
+        # 1. Evaluate ways wins
+        ways_win = eval_ways(board)
+        winning_pos = get_winning_positions(board) if ways_win > 0 else set()
+        total_win += ways_win
+
+        # 2. TNT explodes (always, no winning way required)
+        blocker_win, destroyed_pos = eval_blockers(board, blocker_cfg)
+        total_win += blocker_win
+
+        # 3. Collect all positions to remove (winning symbols + destroyed blockers + TNTs that exploded)
+        remove = set(winning_pos)
+        remove.update(destroyed_pos)
+        # Also remove TNTs that triggered (they explode)
+        if destroyed_pos:
+            wild_pos = {(r, row) for r in range(NUM_REELS) for row in range(NUM_ROWS) if board[r][row] in WILDS}
+            for br, brow in destroyed_pos:
+                for wr, wrow in wild_pos:
+                    if abs(wr - br) <= 1 and abs(wrow - brow) <= 1:
+                        remove.add((wr, wrow))
+
+        if not remove:
+            break  # No cascade - done
+
+        # 4. Fill new symbols
+        cascade_fill(board, reels, remove)
+    return total_win
+
+
 def run_bonus(scatter_count, fg_reels, base_reels, blocker_cfg):
-    """Run a complete bonus round. Returns total bonus win."""
+    """Run a complete bonus round with cascade. Returns total bonus win."""
     tier_key = min(scatter_count, 5)
     tier = BONUS_TIERS[tier_key]
 
@@ -255,20 +304,17 @@ def run_bonus(scatter_count, fg_reels, base_reels, blocker_cfg):
     if tier["pickaxe_mode"]:
         _, collected = run_pickaxe_collection(tier, base_reels)
 
-    # Phase 2: Free spins
+    # Phase 2: Free spins with cascade
     for _ in range(tier["free_spins"]):
         board = draw_board(fg_reels)
 
-        # Ways wins
-        total_win += eval_ways(board)
-
-        # Apply pickaxe hits (with destroy chance, hits consumed regardless)
+        # Apply pickaxe hits first (before cascade)
         if collected:
             pickaxe_win, collected = apply_pickaxe_hits(board, collected, tier, blocker_cfg)
             total_win += pickaxe_win
 
-        # TNT + blocker evaluation
-        total_win += eval_blockers(board, blocker_cfg)
+        # Run cascade loop
+        total_win += run_cascade_spin(board, fg_reels, blocker_cfg)
 
     return min(total_win, WINCAP)
 
@@ -280,9 +326,9 @@ def run_session(num_spins, br0, fg1):
 
     for _ in range(num_spins):
         board = draw_board(br0)
-        ways_win = eval_ways(board)
-        blocker_win = eval_blockers(board)
-        base_win = ways_win + blocker_win
+
+        # Base game with cascade
+        base_win = run_cascade_spin(board, br0, BLOCKER_CONFIG)
 
         sc = count_scatters(board)
         bonus_win = 0
