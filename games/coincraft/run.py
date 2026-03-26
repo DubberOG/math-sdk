@@ -10,15 +10,15 @@ from src.write_data.write_configs import generate_configs
 
 if __name__ == "__main__":
 
-    num_threads = 10
+    num_threads = 4
     rust_threads = 20
-    batching_size = 1000000
+    batching_size = 10000
     compression = True
     profiling = False
 
     num_sim_args = {
         "base": int(1e6),
-        "bonus_boost": int(1e5),
+        "bonus_boost": int(1e6),
         "free_spins": int(1e5),
         "crazy_mining": int(1e5),
         "ultimate_mining": int(1e5),

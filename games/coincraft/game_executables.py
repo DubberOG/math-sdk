@@ -26,7 +26,8 @@ class GameExecutables(GameCalculations):
         return positions
 
     def evaluate_blockers(self, use_bonus_config=False):
-        """TNT always explodes adjacent blockers (no winning way required).
+        """TNT explodes ALL adjacent symbols (not just blockers) and is consumed.
+        Blockers give instant win when destroyed. Regular symbols are just removed.
         Returns (blocker_wins, destroyed_positions, tnt_positions_used)."""
         blocker_cfg_map = (
             self.config.blocker_config_bonus if use_bonus_config and hasattr(self.config, 'blocker_config_bonus')
@@ -37,48 +38,57 @@ class GameExecutables(GameCalculations):
         destroyed_positions = set()
         tnt_used = set()
 
-        # ALL TNT positions (no winning way requirement)
+        # Find ALL TNT positions
         wild_positions = []
-        blocker_positions = []
-
         for reel_idx, reel in enumerate(self.board):
             for row_idx, symbol in enumerate(reel):
                 if symbol.name == "W":
                     wild_positions.append((reel_idx, row_idx))
-                elif symbol.name in self.config.blocker_config:
-                    blocker_positions.append((reel_idx, row_idx, symbol.name))
 
-        for b_reel, b_row, b_name in blocker_positions:
-            blocker_cfg = blocker_cfg_map.get(b_name, self.config.blocker_config[b_name])
-            adjacent_tnts = [
-                (w_reel, w_row) for w_reel, w_row in wild_positions
-                if abs(w_reel - b_reel) <= 1 and abs(w_row - b_row) <= 1
-            ]
-            if adjacent_tnts:
-                destroyed = False
-                for _ in range(len(adjacent_tnts)):
-                    if random.random() < blocker_cfg["destroy_chance"]:
-                        destroyed = True
-                        break
+        if not wild_positions:
+            return blocker_wins, destroyed_positions, tnt_used
 
-                if destroyed:
-                    mult = random.choices(blocker_cfg["values"], weights=blocker_cfg["weights"])[0]
-                    blocker_wins += mult
-                    destroyed_positions.add((b_reel, b_row))
-                    for t in adjacent_tnts:
-                        tnt_used.add(t)
-                    self.book.add_event({
-                        "type": "blockerDestroy",
-                        "position": [b_reel, b_row],
-                        "blockerType": b_name,
-                        "multiplier": mult,
-                    })
-                else:
-                    self.book.add_event({
-                        "type": "blockerSurvive",
-                        "position": [b_reel, b_row],
-                        "blockerType": b_name,
-                    })
+        # TNT explodes ALL adjacent symbols (blockers, regulars, scatters - everything)
+        for w_reel, w_row in wild_positions:
+            has_adjacent = False
+            for reel_idx, reel in enumerate(self.board):
+                for row_idx, symbol in enumerate(reel):
+                    if (reel_idx, row_idx) == (w_reel, w_row):
+                        continue  # Skip the TNT itself
+                    if abs(reel_idx - w_reel) <= 1 and abs(row_idx - w_row) <= 1:
+                        has_adjacent = True
+                        if symbol.name in self.config.blocker_config:
+                            # Blocker: attempt destroy for instant win
+                            b_name = symbol.name
+                            blocker_cfg = blocker_cfg_map.get(b_name, self.config.blocker_config[b_name])
+                            if random.random() < blocker_cfg["destroy_chance"]:
+                                mult = random.choices(blocker_cfg["values"], weights=blocker_cfg["weights"])[0]
+                                blocker_wins += mult
+                                destroyed_positions.add((reel_idx, row_idx))
+                                self.book.add_event({
+                                    "type": "blockerDestroy",
+                                    "position": [reel_idx, row_idx],
+                                    "blockerType": b_name,
+                                    "multiplier": mult,
+                                })
+                            else:
+                                self.book.add_event({
+                                    "type": "blockerSurvive",
+                                    "position": [reel_idx, row_idx],
+                                    "blockerType": b_name,
+                                })
+                        elif symbol.name != "W":
+                            # Non-blocker, non-TNT: just destroyed (removed for cascade)
+                            destroyed_positions.add((reel_idx, row_idx))
+                            self.book.add_event({
+                                "type": "tntDestroy",
+                                "position": [reel_idx, row_idx],
+                                "symbol": symbol.name,
+                            })
+
+            # TNT is always consumed after exploding
+            if has_adjacent:
+                tnt_used.add((w_reel, w_row))
 
         if blocker_wins > 0:
             self.win_manager.update_spinwin(blocker_wins)

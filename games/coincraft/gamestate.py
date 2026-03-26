@@ -206,7 +206,6 @@ class GameState(GameStateOverride):
         self.reset_fs_spin()
         pickaxes = getattr(self, '_collected_pickaxes', [])
         tier = getattr(self, '_bonus_tier', None)
-        remaining_hits = sum(p["hits"] for p in pickaxes)
 
         is_bonus_buy = hasattr(self.config, 'blocker_config_bonus') and self.betmode == 'bonus'
 
@@ -214,9 +213,9 @@ class GameState(GameStateOverride):
             self.update_freespin()
             self.draw_board(emit_event=True)
 
-            # Apply pickaxe hits before cascade
-            if remaining_hits > 0:
-                remaining_hits = self.apply_pickaxe_hits(remaining_hits, tier, is_bonus_buy)
+            # Apply pickaxe hits before cascade (per-pickaxe type destroy chances)
+            if pickaxes:
+                pickaxes = self.apply_pickaxe_hits(pickaxes, tier, is_bonus_buy)
 
             # Run cascade loop (ways + TNT + fill, repeat)
             self.run_cascade_loop(use_bonus_config=is_bonus_buy)
@@ -228,29 +227,37 @@ class GameState(GameStateOverride):
         self._collected_pickaxes = []
         self._bonus_tier = None
 
-    def apply_pickaxe_hits(self, remaining_hits, tier, is_bonus_buy=False, pickaxe_type="bronze"):
+    def apply_pickaxe_hits(self, collected_pickaxes, tier, is_bonus_buy=False):
         """Use pickaxe hits to attempt destroying blockers on the board.
         Each hit is consumed regardless of whether it destroys the blocker.
-        Destroy chance depends on pickaxe type vs blocker tier."""
+        Destroy chance depends on pickaxe type vs blocker tier.
+        Returns updated collected_pickaxes list with remaining hits."""
         removed_blockers = tier["removed_blockers"] if tier else []
         blocker_cfg_map = (
             self.config.blocker_config_bonus if is_bonus_buy and hasattr(self.config, 'blocker_config_bonus')
             else self.config.blocker_config
         )
-        destroy_chances = self.config.pickaxe_destroy_chance.get(pickaxe_type, {})
 
+        # Build a flat queue of pickaxe types from collected list
+        hit_queue = []
+        for p in collected_pickaxes:
+            hit_queue.extend([p["type"]] * p["hits"])
+
+        hit_idx = 0
         for reel_idx, reel in enumerate(self.board):
-            if remaining_hits <= 0:
+            if hit_idx >= len(hit_queue):
                 break
             for row_idx, symbol in enumerate(reel):
-                if remaining_hits <= 0:
+                if hit_idx >= len(hit_queue):
                     break
                 if symbol.name in self.config.blocker_config:
                     if symbol.name in removed_blockers:
                         continue
 
-                    # Consume hit regardless of outcome
-                    remaining_hits -= 1
+                    # Get destroy chance for this pickaxe type vs this blocker
+                    pickaxe_type = hit_queue[hit_idx]
+                    hit_idx += 1  # Consume hit regardless of outcome
+                    destroy_chances = self.config.pickaxe_destroy_chance.get(pickaxe_type, {})
                     chance = destroy_chances.get(symbol.name, 0)
 
                     if random.random() < chance:
@@ -262,8 +269,9 @@ class GameState(GameStateOverride):
                             "type": "pickaxeUsed",
                             "position": [reel_idx, row_idx],
                             "blockerType": symbol.name,
+                            "pickaxeType": pickaxe_type,
                             "multiplier": mult,
-                            "hitsRemaining": remaining_hits,
+                            "hitsRemaining": len(hit_queue) - hit_idx,
                             "destroyed": True,
                         })
                     else:
@@ -271,9 +279,23 @@ class GameState(GameStateOverride):
                             "type": "pickaxeUsed",
                             "position": [reel_idx, row_idx],
                             "blockerType": symbol.name,
+                            "pickaxeType": pickaxe_type,
                             "multiplier": 0,
-                            "hitsRemaining": remaining_hits,
+                            "hitsRemaining": len(hit_queue) - hit_idx,
                             "destroyed": False,
                         })
 
-        return remaining_hits
+        # Rebuild remaining collected_pickaxes from unused hits
+        remaining_hits = len(hit_queue) - hit_idx
+        if remaining_hits <= 0:
+            return []
+
+        new_collected = []
+        left = remaining_hits
+        for p in reversed(collected_pickaxes):
+            if left <= 0:
+                break
+            take = min(p["hits"], left)
+            new_collected.insert(0, {"type": p["type"], "hits": take})
+            left -= take
+        return new_collected

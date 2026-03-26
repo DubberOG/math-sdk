@@ -110,26 +110,42 @@ def eval_ways(board):
 
 
 def eval_blockers(board, config=BLOCKER_CONFIG):
-    """Evaluate TNT+blocker interactions. TNT always triggers (no winning way required).
-    Returns (total_win, destroyed_positions) for cascade."""
+    """Evaluate TNT explosions. TNT destroys ALL adjacent symbols and is consumed.
+    Blockers give instant win when destroyed. Regular symbols just removed.
+    Returns (total_win, destroyed_positions, tnt_used) for cascade."""
     wild_pos = [(r, row) for r in range(NUM_REELS) for row in range(NUM_ROWS) if board[r][row] in WILDS]
-    blocker_pos = []
-    for r in range(NUM_REELS):
-        for row in range(NUM_ROWS):
-            s = board[r][row]
-            if s in config:
-                blocker_pos.append((r, row, s))
+
+    if not wild_pos:
+        return 0, set(), set()
 
     total = 0
     destroyed = set()
-    for br, brow, bname in blocker_pos:
-        cfg = config[bname]
-        num_tnt = sum(1 for wr, wrow in wild_pos if abs(wr - br) <= 1 and abs(wrow - brow) <= 1)
-        if num_tnt > 0:
-            if any(random.random() < cfg["destroy_chance"] for _ in range(num_tnt)):
-                total += random.choices(cfg["values"], weights=cfg["weights"])[0]
-                destroyed.add((br, brow))
-    return total, destroyed
+    tnt_used = set()
+
+    for wr, wrow in wild_pos:
+        has_adjacent = False
+        for r in range(NUM_REELS):
+            for row in range(NUM_ROWS):
+                if (r, row) == (wr, wrow):
+                    continue  # Skip the TNT itself
+                if abs(r - wr) <= 1 and abs(row - wrow) <= 1:
+                    has_adjacent = True
+                    s = board[r][row]
+                    if s in config:
+                        # Blocker: attempt destroy for instant win
+                        cfg = config[s]
+                        if random.random() < cfg["destroy_chance"]:
+                            total += random.choices(cfg["values"], weights=cfg["weights"])[0]
+                            destroyed.add((r, row))
+                    elif s not in WILDS:
+                        # Non-blocker, non-TNT: just destroyed (removed for cascade)
+                        destroyed.add((r, row))
+
+        # TNT is always consumed after exploding
+        if has_adjacent:
+            tnt_used.add((wr, wrow))
+
+    return total, destroyed, tnt_used
 
 
 def get_winning_positions(board):
@@ -269,20 +285,14 @@ def run_cascade_spin(board, reels, blocker_cfg, max_cascades=20):
         winning_pos = get_winning_positions(board) if ways_win > 0 else set()
         total_win += ways_win
 
-        # 2. TNT explodes (always, no winning way required)
-        blocker_win, destroyed_pos = eval_blockers(board, blocker_cfg)
+        # 2. TNT explodes ALL adjacent symbols and is consumed
+        blocker_win, destroyed_pos, tnt_used = eval_blockers(board, blocker_cfg)
         total_win += blocker_win
 
-        # 3. Collect all positions to remove (winning symbols + destroyed blockers + TNTs that exploded)
+        # 3. Collect all positions to remove
         remove = set(winning_pos)
         remove.update(destroyed_pos)
-        # Also remove TNTs that triggered (they explode)
-        if destroyed_pos:
-            wild_pos = {(r, row) for r in range(NUM_REELS) for row in range(NUM_ROWS) if board[r][row] in WILDS}
-            for br, brow in destroyed_pos:
-                for wr, wrow in wild_pos:
-                    if abs(wr - br) <= 1 and abs(wrow - brow) <= 1:
-                        remove.add((wr, wrow))
+        remove.update(tnt_used)  # TNTs that exploded are consumed
 
         if not remove:
             break  # No cascade - done
