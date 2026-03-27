@@ -141,6 +141,19 @@ class GameConfig(Config):
                 is_buybonus=False,
                 distributions=[
                     Distribution(
+                        criteria="wincap",
+                        fixed_amt=5,
+                        win_criteria=self.wincap,
+                        conditions={
+                            "reel_weights": {
+                                self.basegame_type: {"BR0": 1},
+                                self.freegame_type: {"FG0": 1},
+                            },
+                            "force_wincap": True,
+                            "force_freegame": False,
+                        },
+                    ),
+                    Distribution(
                         criteria="freegame",
                         quota=0.05,
                         conditions={
@@ -180,7 +193,7 @@ class GameConfig(Config):
                     ),
                 ],
             ),
-            # Bonus Hunt - increased chance to trigger bonus (cost 10x)
+            # Bonus Hunt - increased chance to trigger bonus (cost 2x)
             BetMode(
                 name="bonus_boost",
                 cost=2.0,
@@ -190,6 +203,19 @@ class GameConfig(Config):
                 is_feature=False,
                 is_buybonus=True,
                 distributions=[
+                    Distribution(
+                        criteria="wincap",
+                        fixed_amt=5,
+                        win_criteria=self.wincap,
+                        conditions={
+                            "reel_weights": {
+                                self.basegame_type: {"BN0": 1},
+                                self.freegame_type: {"FG0": 1},
+                            },
+                            "force_wincap": True,
+                            "force_freegame": False,
+                        },
+                    ),
                     Distribution(
                         criteria="freegame",
                         quota=0.5,
@@ -228,6 +254,19 @@ class GameConfig(Config):
                 is_buybonus=True,
                 distributions=[
                     Distribution(
+                        criteria="wincap",
+                        fixed_amt=5,
+                        win_criteria=self.wincap,
+                        conditions={
+                            "reel_weights": {
+                                self.basegame_type: {"BN0": 1},
+                                self.freegame_type: {"FG1": 1},
+                            },
+                            "force_wincap": True,
+                            "force_freegame": False,
+                        },
+                    ),
+                    Distribution(
                         criteria="freegame",
                         quota=1,
                         conditions={
@@ -242,16 +281,29 @@ class GameConfig(Config):
                     ),
                 ],
             ),
-            # Ultimate Mining - guaranteed 4 scatters, pickaxe collection (cost 250x)
+            # Crazy Mining - guaranteed 4 scatters, pickaxe collection (cost 200x)
             BetMode(
                 name="crazy_mining",
-                cost=250.0,
+                cost=200.0,
                 rtp=self.rtp,
                 max_win=mode_maxwins["crazy_mining"],
                 auto_close_disabled=False,
                 is_feature=False,
                 is_buybonus=True,
                 distributions=[
+                    Distribution(
+                        criteria="wincap",
+                        fixed_amt=5,
+                        win_criteria=self.wincap,
+                        conditions={
+                            "reel_weights": {
+                                self.basegame_type: {"BN0": 1},
+                                self.freegame_type: {"FG1": 1},
+                            },
+                            "force_wincap": True,
+                            "force_freegame": False,
+                        },
+                    ),
                     Distribution(
                         criteria="freegame",
                         quota=1,
@@ -267,7 +319,7 @@ class GameConfig(Config):
                     ),
                 ],
             ),
-            # Mining Bonanza - guaranteed 5 scatters, enhanced pickaxe (cost 500x)
+            # Ultimate Mining - guaranteed 5 scatters, enhanced pickaxe (cost 500x)
             BetMode(
                 name="ultimate_mining",
                 cost=500.0,
@@ -277,6 +329,19 @@ class GameConfig(Config):
                 is_feature=False,
                 is_buybonus=True,
                 distributions=[
+                    Distribution(
+                        criteria="wincap",
+                        fixed_amt=5,
+                        win_criteria=self.wincap,
+                        conditions={
+                            "reel_weights": {
+                                self.basegame_type: {"BN0": 1},
+                                self.freegame_type: {"FG1": 1},
+                            },
+                            "force_wincap": True,
+                            "force_freegame": False,
+                        },
+                    ),
                     Distribution(
                         criteria="freegame",
                         quota=1,

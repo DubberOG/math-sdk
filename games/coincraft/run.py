@@ -17,11 +17,11 @@ if __name__ == "__main__":
     profiling = False
 
     num_sim_args = {
-        "base": int(1e6),
-        "bonus_boost": int(1e6),
-        "free_spins": int(1e5),
-        "crazy_mining": int(1e5),
-        "ultimate_mining": int(1e5),
+        "base": int(1e4),
+        "bonus_boost": int(1e4),
+        "free_spins": int(1e4),
+        "crazy_mining": int(1e4),
+        "ultimate_mining": int(1e4),
     }
 
     run_conditions = {

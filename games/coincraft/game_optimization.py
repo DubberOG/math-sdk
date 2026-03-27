@@ -20,6 +20,7 @@ class OptimizationSetup:
         self.game_config.opt_params = {
             "base": {
                 "conditions": {
+                    "wincap": ConstructConditions(rtp=0, av_win=0, search_conditions=0).return_dict(),
                     "0": ConstructConditions(rtp=0, av_win=0, search_conditions=0).return_dict(),
                     "freegame": ConstructConditions(
                         rtp=0.36, hr=250, search_conditions={"symbol": "scatter"}
@@ -73,6 +74,7 @@ class OptimizationSetup:
             },
             "bonus_boost": {
                 "conditions": {
+                    "wincap": ConstructConditions(rtp=0, av_win=0, search_conditions=0).return_dict(),
                     "freegame": ConstructConditions(
                         rtp=0.50, hr="x", search_conditions={"symbol": "scatter"}
                     ).return_dict(),
@@ -90,6 +92,7 @@ class OptimizationSetup:
             },
             "free_spins": {
                 "conditions": {
+                    "wincap": ConstructConditions(rtp=0, av_win=0, search_conditions=0).return_dict(),
                     "freegame": ConstructConditions(rtp=0.96, hr="x").return_dict(),
                 },
                 "scaling": ConstructScaling([
@@ -105,6 +108,7 @@ class OptimizationSetup:
             },
             "crazy_mining": {
                 "conditions": {
+                    "wincap": ConstructConditions(rtp=0, av_win=0, search_conditions=0).return_dict(),
                     "freegame": ConstructConditions(rtp=0.96, hr="x").return_dict(),
                 },
                 "scaling": ConstructScaling([
@@ -119,6 +123,7 @@ class OptimizationSetup:
             },
             "ultimate_mining": {
                 "conditions": {
+                    "wincap": ConstructConditions(rtp=0, av_win=0, search_conditions=0).return_dict(),
                     "freegame": ConstructConditions(rtp=0.96, hr="x").return_dict(),
                 },
                 "scaling": ConstructScaling([

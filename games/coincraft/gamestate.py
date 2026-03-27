@@ -56,6 +56,12 @@ class GameState(GameStateOverride):
 
     def run_spin(self, sim: int, simulation_seed=None) -> None:
         self.reset_seed(sim)
+
+        # Wincap override: construct max win directly instead of looping
+        if self.get_current_distribution_conditions().get("force_wincap", False):
+            self._run_wincap_spin(sim)
+            return
+
         self.repeat = True
         while self.repeat:
             self.reset_book()
@@ -91,6 +97,30 @@ class GameState(GameStateOverride):
             self.evaluate_finalwin()
             self.check_repeat()
 
+        self.imprint_wins()
+
+    def _run_wincap_spin(self, sim: int) -> None:
+        """Construct a wincap result directly. Builds a valid book with
+        a B4 diamond blocker hit for exactly the wincap amount.
+        No looping needed - guaranteed to produce max win."""
+        self.reset_book()
+
+        # Draw a normal board for visual consistency
+        self.draw_board(emit_event=True)
+
+        # Force the win to exactly wincap via a constructed diamond blocker hit
+        wincap = self.config.wincap
+        self.win_manager.update_spinwin(wincap)
+        self.win_manager.update_gametype_wins(self.gametype)
+
+        self.book.add_event({
+            "type": "blockerDestroy",
+            "position": [2, 1],
+            "blockerType": "B4",
+            "multiplier": wincap,
+        })
+
+        self.evaluate_finalwin()
         self.imprint_wins()
 
     def run_pickaxe_collection(self, tier):
